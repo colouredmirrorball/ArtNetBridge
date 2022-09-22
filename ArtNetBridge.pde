@@ -1,3 +1,4 @@
+
 import ch.bildspur.artnet.*;
 import ch.bildspur.artnet.packets.*;
 import ch.bildspur.artnet.events.*;
@@ -46,9 +47,13 @@ void setup()
     String[] parse = split(s, ' ');
     if (parse.length > 7)
     {
-      
+
       StripOutput newOutput = new StripOutput(int(parse[0]), int(parse[1]), int(parse[3]), int(parse[4]));
+      int order = StripOutput.RGBW;
+      if (parse[2].equalsIgnoreCase("GRB")) order=StripOutput.GRB;
+      newOutput.setOrder( order);
       newOutput.setRange(int(parse[6]), int(parse[7]), parse[5].equals("r"));
+
       outputs.add(newOutput);
     }
   }
@@ -101,7 +106,7 @@ void sendPixels()
         }
         if (strip != null)
         {
-          for (int stripx = output.beginActual; stripx < min(strip.getLength(), output.endActual); stripx++) 
+          for (int stripx = output.beginActual; stripx <= min(strip.getLength(), output.endActual); stripx++) 
           {
             strip.setPixel(output.getCorrectedColour(stripx), stripx);
           }

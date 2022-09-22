@@ -1,3 +1,4 @@
+
 class TestObserver implements Observer {
   public boolean hasStrips = false;
   public void update(Observable registry, Object updatedDevice) {
@@ -7,4 +8,4 @@ class TestObserver implements Observer {
     }
     this.hasStrips = true;
   }
-};
+}

@@ -1,2 +1,7 @@
+<<<<<<< HEAD
 0 0 rgbw 180 0 s 0 179
 0 1 rgbw 180 0 s 0 179
+=======
+0 0 rgbw 180 0 s 0 179
+0 1 rgbw 180 0 s 0 179
+>>>>>>> origin/master

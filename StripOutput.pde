@@ -1,3 +1,4 @@
+
 class StripOutput
 {
   int length = 120;
@@ -9,10 +10,10 @@ class StripOutput
   int strip;
   int begin;
   int end;
-
+  int colourByteSize = 4;
   int beginActual, endActual;
 
-  static final int RGBW = 0;
+  static final int RGBW = 0, GRB = 1;
   int order = RGBW;
 
   public StripOutput(int subnet, int universe, int length, int strip)
@@ -22,15 +23,30 @@ class StripOutput
     this.length = length;
     this.strip = strip;
     buffer = new int[length];
-    beginActual = 0;
-    endActual = length*4/3-1;
+    setOrder(RGBW);
+  }
+
+  public void setOrder(int order)
+  {
+    this.order = order;
+    if (order == GRB)
+    {
+      beginActual = 0;
+      endActual = length*3;
+      colourByteSize = 3;
+    } else
+    {
+      beginActual = 0;
+      endActual = length*4/3-1;
+      colourByteSize = 4;
+    }
   }
 
   public void parseDmx()
   {
     byte[] data = artnet.readDmxData(subnet, universe);
     int j = 0;
-    for (int i = 0; i < min(data.length, length*3)-2; i+=3)
+    for (int i = 0; i < min(data.length, length*3); i+=3)
     {
       color c = color(data[i] & 0xff, data[i+1] & 0xff, data[i+2] & 0xff);
       int w = 0;
@@ -45,8 +61,8 @@ class StripOutput
     this.begin= begin;
     this.end = end;
     this.reversed = reversed;
-    beginActual = begin*4/3;
-    endActual = end*4/3+1;
+    beginActual = colourByteSize == 4 ? begin*4/3 : begin;
+    endActual = colourByteSize == 4 ? end*4/3+1 : end;
     println("beginActual", beginActual, "endActual", endActual);
   }
 
@@ -72,22 +88,31 @@ class StripOutput
 
   int getCorrectedColour(int idx)
   {
-    int result = 0;
-    int offset = 3*((idx-beginActual)/4);
-    switch(idx%4)
+    if (order == GRB) 
     {
-    case 0 : 
-      result=(((int)red(buffer[offset]) & 0xff) << 16) | (((int)blue(buffer[offset]) & 0xff) << 8) | ((int)green(buffer[offset]) & 0xff);
-      break;
-    case 1:
-      result=  (((int)green(buffer[offset+1]) & 0xff) << 16) | (((int)red(buffer[offset+1]) & 0xff) << 8) | ((int)alpha(buffer[offset]) & 0xff);
-      break;
-    case 2:
-      result= (((int)alpha(buffer[offset+1]) & 0xff) << 16) | (((int)green(buffer[offset+2]) & 0xff) << 8) | ((int)blue(buffer[offset+1]) & 0xff);
-      break;
-    default:
-      result=(((int)blue(buffer[offset+2])& 0xff) << 16 ) | (((int)alpha(buffer[offset+2]) & 0xff) << 8) | ((int)red(buffer[offset+2]) & 0xff);
+      color bufferColour = buffer[idx-beginActual];
+
+      return color(green(bufferColour), blue(bufferColour), red(bufferColour));
+    } else
+    {
+      int result = 0;
+      int offset = 3*((idx-beginActual)/4);
+
+      switch(idx%colourByteSize)
+      {
+      case 0 : 
+        result=(((int)red(buffer[offset]) & 0xff) << 16) | (((int)blue(buffer[offset]) & 0xff) << 8) | ((int)green(buffer[offset]) & 0xff);
+        break;
+      case 1:
+        result=  (((int)green(buffer[offset+1]) & 0xff) << 16) | (((int)red(buffer[offset+1]) & 0xff) << 8) | ((int)alpha(buffer[offset]) & 0xff);
+        break;
+      case 2:
+        result= (((int)alpha(buffer[offset+1]) & 0xff) << 16) | (((int)green(buffer[offset+2]) & 0xff) << 8) | ((int)blue(buffer[offset+1]) & 0xff);
+        break;
+      default:
+        result=(((int)blue(buffer[offset+2])& 0xff) << 16 ) | (((int)alpha(buffer[offset+2]) & 0xff) << 8) | ((int)red(buffer[offset+2]) & 0xff);
+      }
+      return result;
     }
-    return result;
   }
 }
